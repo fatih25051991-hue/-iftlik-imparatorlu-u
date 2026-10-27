@@ -1,0 +1,232 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>Çiftlik İmparatorluğu V9</title><style>*{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}html,body,button,canvas,#stick,#nub{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}button{appearance:none;-webkit-appearance:none;outline:none}body{margin:0;overflow:hidden;font-family:system-ui;background:#8acbff;touch-action:none}canvas{display:block;width:100vw;height:100dvh}#hud{position:absolute;top:env(safe-area-inset-top);left:12px;color:white;text-shadow:0 2px 5px #253d32;font-weight:900;font-size:19px;pointer-events:none}#hud small{display:block;font-size:15px}#msg{position:absolute;top:19%;left:50%;transform:translateX(-50%);background:#244d3ce8;color:white;padding:12px 16px;border-radius:16px;white-space:nowrap;font-size:14px;pointer-events:none}#stick{position:absolute;bottom:45px;left:24px;width:132px;height:132px;border:3px solid #ffffff9a;background:#1c5d4966;border-radius:50%;touch-action:none}#nub{position:absolute;width:55px;height:55px;border:3px solid white;background:#d6e3e8b0;border-radius:50%;left:36px;top:36px;pointer-events:none}.btn{position:absolute;background:#28534fdc;border:2px solid white;color:white;font-weight:bold;border-radius:16px;touch-action:none}#act{right:22px;bottom:48px;width:124px;height:100px;background:#e8a22e;font-size:20px}#left{right:124px;bottom:158px;width:60px;height:60px}#right{right:52px;bottom:158px;width:60px;height:60px}#err{display:none;position:absolute;inset:20% 5% auto;background:white;padding:15px;border-radius:12px;color:#a00}#loading{position:absolute;inset:0;background:#d5ecff;display:grid;place-items:center;color:#245b44;font-weight:bold;font-size:22px}</style></head><body><div id="loading">3D köy yükleniyor…</div><div id="err"></div><div id="hud">🌾 ÇİFTLİK İMPARATORLUĞU<small id="money">🪙 0 altın · 3D Köy V9</small></div><div id="msg">Joystick ile yürü · Traktöre yaklaş</div><div id="stick"><div id="nub"></div></div><button class="btn" id="left">↶</button><button class="btn" id="right">↷</button><button class="btn" id="act">ETKİLEŞ</button><script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script><script>
+(function(){'use strict';const error=t=>{document.getElementById('loading').style.display='none';const e=document.getElementById('err');e.style.display='block';e.textContent=t};if(!window.THREE){error('3D motoru yüklenemedi. Safari üzerinden internet bağlantısıyla açın.');return}try{
+const T=THREE,scene=new T.Scene();scene.background=new T.Color(0x8ccfff);scene.fog=new T.Fog(0x9ed8fa,70,155);const camera=new T.PerspectiveCamera(63,innerWidth/innerHeight,.1,180),renderer=new T.WebGLRenderer({antialias:true,powerPreference:'default'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;document.body.insertBefore(renderer.domElement,document.body.firstChild);scene.add(new T.HemisphereLight(0xffffff,0x6c9d61,2.15));const sun=new T.DirectionalLight(0xfff0cf,2.1);sun.position.set(-16,28,20);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;scene.add(sun);
+const mat=(c,r=1,m=0)=>new T.MeshStandardMaterial({color:c,roughness:r,metalness:m});const green=mat(0x6daf55),red=mat(0xd53b20,.45),black=mat(0x252b2c),rubber=mat(0x171a1b),steel=mat(0xb7c5c5,.36,.55),glass=mat(0x8bd1ec,.17,.15),wood=mat(0x8b5936),soil=mat(0x8b613c),gold=mat(0xf5c447,.38,.3);function box(parent,w,h,d,x,y,z,m){let o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}function sphere(parent,r,x,y,z,m,seg=16){let o=new T.Mesh(new T.SphereGeometry(r,seg,12),m);o.position.set(x,y,z);o.castShadow=true;parent.add(o);return o}function cyl(parent,rt,rb,h,x,y,z,m,n=16){let o=new T.Mesh(new T.CylinderGeometry(rt,rb,h,n),m);o.position.set(x,y,z);o.castShadow=true;parent.add(o);return o}function wheel(parent,x,y,z,r){const pivot=new T.Group();pivot.position.set(x,y,z);parent.add(pivot);const spin=new T.Group();pivot.add(spin);const tire=new T.Mesh(new T.CylinderGeometry(r,r,.34,24),rubber);tire.rotation.z=Math.PI/2;tire.castShadow=true;spin.add(tire);const hub=new T.Mesh(new T.CylinderGeometry(r*.51,r*.51,.355,24),steel);hub.rotation.z=Math.PI/2;spin.add(hub);const cap=new T.Mesh(new T.CylinderGeometry(r*.18,r*.18,.37,24),gold);cap.rotation.z=Math.PI/2;spin.add(cap);// Dişler tekerlekle birlikte dönerek hareketi görünür kılar.
+for(let j=0;j<12;j++){const a=j*Math.PI/6;const tread=new T.Mesh(new T.BoxGeometry(.39,.095,.16),rubber);tread.position.set(0,Math.sin(a)*(r+.008),Math.cos(a)*(r+.008));tread.rotation.x=-a;spin.add(tread)}
+// Jant üzerindeki işaret gerçek yuvarlanmayı gözle görünür kılar.
+for(const side of [-1,1]){const marker=new T.Mesh(new T.BoxGeometry(.018,r*.39,.045),gold);marker.position.set(side*.19,r*.24,0);spin.add(marker)}
+pivot.userData.spin=spin;return pivot}
+
+// Zemin dokusu: çim taneleri ve renk farklılıkları (telefon için hafif)
+const grassCanvas=document.createElement('canvas');grassCanvas.width=256;grassCanvas.height=256;const gc=grassCanvas.getContext('2d');gc.fillStyle='#76b85d';gc.fillRect(0,0,256,256);let seed=1729;function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}for(let i=0;i<2100;i++){const x=rand()*256,y=rand()*256;gc.fillStyle=['#639f4e','#85c769','#a0ce70','#5d9f50'][Math.floor(rand()*4)];gc.fillRect(x,y,1+rand()*3,1+rand()*4)}const grassTexture=new T.CanvasTexture(grassCanvas);grassTexture.wrapS=grassTexture.wrapT=T.RepeatWrapping;grassTexture.repeat.set(65,65);grassTexture.colorSpace=T.SRGBColorSpace;const grassMat=new T.MeshStandardMaterial({map:grassTexture,roughness:1});
+box(scene,200,.12,200,0,-.1,0,grassMat);box(scene,7,.025,85,0,.01,0,mat(0xc5ad83));const tractor=new T.Group();scene.add(tractor);box(tractor,1.65,.65,2.55,0,.83,0,red);box(tractor,1.43,.8,1.35,0,1.35,-.65,red);box(tractor,1.38,.65,.94,0,1.92,-.72,glass);box(tractor,1.6,.22,1.4,0,2.37,-.7,red);box(tractor,1.5,.42,1.05,0,1.2,1.02,red);box(tractor,1.35,.12,.08,0,1.23,1.57,steel);cyl(tractor,.09,.09,1.1,.6,1.9,.8,black);box(tractor,.7,.16,.12,0,1.58,1.58,gold);let wheels=[wheel(tractor,-.91,.67,-.85,.67),wheel(tractor,.91,.67,-.85,.67),wheel(tractor,-.88,.47,1.05,.45),wheel(tractor,.88,.47,1.05,.45)];
+// Tekerlek silindirinin ekseni X yönündedir; yuvarlanma yerel X ekseninde yapılır.
+// Ön tekerlekler ayrı direksiyon mafsallarına bağlıdır.
+// Silindirler yerel X aksına yatırıldı; dönüş sadece aks etrafında yapılır.
+const frontSteer=[wheels[2],wheels[3]];const wheelSpin=wheels.map(()=>0);
+// Traktör koltuğu, direksiyon, çamurluk ve far ayrıntıları
+box(tractor,.7,.22,.64,0,1.7,-.7,black);box(tractor,.16,.6,.12,0,1.43,-.22,steel);
+const steering=cyl(tractor,.34,.34,.06,0,1.79,-.12,black,24);steering.rotation.x=.48;
+for(const xx of [-.94,.94]){let f=box(tractor,.2,.12,.88,xx,1.28,-.85,red);f.rotation.z=xx>0?-.13:.13}
+tractor.position.set(3,0,2);
+const farmer=new T.Group();scene.add(farmer);const pants=mat(0x254b73),shirt=mat(0xd94c2c),skin=mat(0xf1b982),hair=mat(0x4b2b1d),hat=mat(0xcfa44b);box(farmer,.8,.94,.45,0,1.2,0,pants);box(farmer,.78,.35,.46,0,1.73,0,shirt);const armL=box(farmer,.22,.82,.24,-.53,1.29,0,shirt),armR=box(farmer,.22,.82,.24,.53,1.29,0,shirt);const legL=box(farmer,.28,.72,.32,-.21,.39,0,pants),legR=box(farmer,.28,.72,.32,.21,.39,0,pants);sphere(farmer,.36,0,2.12,0,skin);// Yüz, kameranın görebileceği +Z yönüne bakar.
+sphere(farmer,.055,-.13,2.20,.323,black,12);sphere(farmer,.055,.13,2.20,.323,black,12);
+sphere(farmer,.07,0,2.08,.35,skin,12);
+const smile=new T.Mesh(new T.TorusGeometry(.145,.021,6,24,Math.PI),hair);smile.position.set(0,1.99,.339);smile.rotation.z=Math.PI;farmer.add(smile);
+for(const xx of [-.13,.13]){const brow=box(farmer,.13,.025,.025,xx,2.30,.325,hair);brow.rotation.z=xx>0?-.12:.12}
+box(farmer,.3,.10,.06,0,1.94,.31,hair);
+// Takip kamerası arkadan (-Z) baktığı için yüzün görünmesi amacıyla arka yöne de yüz çizimi.
+for(const xx of [-.13,.13])sphere(farmer,.06,xx,2.20,-.335,black,12);
+sphere(farmer,.075,0,2.08,-.35,skin,12);
+const rearMouth=new T.Mesh(new T.TorusGeometry(.13,.025,6,18,Math.PI),hair);rearMouth.position.set(0,1.99,-.345);rearMouth.rotation.z=Math.PI;farmer.add(rearMouth);
+box(farmer,.30,.09,.06,0,1.94,-.33,hair);
+cyl(farmer,.53,.55,.09,0,2.48,0,hat);cyl(farmer,.35,.35,.26,0,2.59,0,hat);farmer.position.set(0,0,5);
+function building(x,z,color){const b=new T.Group();b.position.set(x,0,z);scene.add(b);box(b,4,2.9,3.6,0,1.45,0,mat(color));let roof=box(b,4.5,.2,4.1,0,3.28,0,mat(0xa8492c));roof.rotation.z=.03;box(b,.85,1.75,.07,0,.88,1.83,wood);for(let xx of [-1.2,1.2]){box(b,.75,.8,.08,xx,1.9,1.84,glass);box(b,.09,.85,.1,xx,1.9,1.9,wood)}return b}building(-8,-7,0xe3c49a);building(9,-10,0xe4b787);building(-10,11,0xcda378);
+for(let i=0;i<26;i++){const x=(i%7)*3.3-12,z=Math.floor(i/7)*7-18;if(Math.abs(x)<4||Math.abs(x-3)<4&&Math.abs(z-2)<5)continue;const tr=new T.Group();tr.position.set(x,0,z);scene.add(tr);cyl(tr,.22,.3,1.6,0,.8,0,wood);for(let k=0;k<3;k++)sphere(tr,1.15,Math.sin(k*2.1)*.55,2.05+k*.35,Math.cos(k*2.1)*.4,mat(k%2?0x398a3e:0x3e9344),12)}
+const field=new T.Group();field.position.set(9,0,9);scene.add(field);box(field,8,.04,8,0,.01,0,soil);let crops=[];const wheat=mat(0xe5ba37);for(let i=0;i<10;i++)for(let j=0;j<10;j++){let s=cyl(field,.06,.04,.9,-3.5+i*.75,.5,-3.5+j*.75,wheat,5);crops.push(s)}
+
+// V6: Ayrıntılı köy dekorasyonu ve gerçek 3B çevre modelleri
+const cream=mat(0xf4e1b4),stone=mat(0x9c9d92),tile=mat(0xb54d2d),leaf=mat(0x38874a),darkleaf=mat(0x226b3b),flower=mat(0xffd44e),white=mat(0xf5f0df),blue=mat(0x317ba2),fenceMat=mat(0xb88950),roadMat=mat(0xc9ad82),pink=mat(0xe56c86),orange=mat(0xf39d37);
+// Taş yollar ve çiçekli çevre ayrıntıları
+const pebble=mat(0xb6aa91),pebble2=mat(0xe1d1b0),stem=mat(0x398044);
+for(let i=0;i<120;i++){let x=(rand()-.5)*58,z=(rand()-.5)*58;if(Math.abs(x)<4.2||Math.abs(x-9)<5&&Math.abs(z-9)<5)continue;let r=.09+rand()*.18;let m=new T.Mesh(new T.DodecahedronGeometry(r,0),rand()>.5?pebble:pebble2);m.position.set(x,.055,z);m.scale.y=.25;scene.add(m)}
+for(let i=0;i<150;i++){let x=(rand()-.5)*58,z=(rand()-.5)*58;if(Math.abs(x)<4||Math.abs(x-9)<5&&Math.abs(z-9)<5)continue;let f=new T.Group();f.position.set(x,0,z);scene.add(f);cyl(f,.025,.025,.27,0,.14,0,stem,5);sphere(f,.085,0,.31,0,[pink,flower,white,orange][i%4],7)}
+// Köy meydanı, yollar, taşlı patika
+box(scene,9,.04,12,-1,.02,-11,roadMat);box(scene,3.2,.035,42,0,.015,-5,roadMat);
+const plaza=new T.Mesh(new T.CylinderGeometry(5.3,5.3,.07,48),stone);plaza.position.set(0,.025,-23);plaza.receiveShadow=true;scene.add(plaza);
+const pool=new T.Mesh(new T.CylinderGeometry(1.55,1.65,.4,32),cream);pool.position.set(0,.27,-23);scene.add(pool);const water=new T.Mesh(new T.CylinderGeometry(1.32,1.32,.03,32),glass);water.position.set(0,.5,-23);scene.add(water);cyl(scene,.15,.2,1.35,0,1.1,-23,cream);sphere(scene,.23,0,1.9,-23,white);
+function roofHouse(x,z,w,d,wallcolor){const g=new T.Group();g.position.set(x,0,z);scene.add(g);box(g,w,2.8,d,0,1.4,0,mat(wallcolor));const shape=new T.Shape();shape.moveTo(-w/2-.3,0);shape.lineTo(0,1.4);shape.lineTo(w/2+.3,0);shape.lineTo(-w/2-.3,0);const geom=new T.ExtrudeGeometry(shape,{depth:d+.65,bevelEnabled:false});const roof=new T.Mesh(geom,tile);roof.position.set(0,2.8,-d/2-.33);roof.castShadow=true;g.add(roof);box(g,.88,1.85,.08,0,.93,d/2+.05,wood);for(const xx of [-w*.31,w*.31]){box(g,.82,.83,.08,xx,1.85,d/2+.06,white);box(g,.63,.65,.09,xx,1.87,d/2+.12,glass);box(g,.09,.85,.12,xx,1.85,d/2+.18,wood)}box(g,w+.2,.22,.24,0,.16,d/2+.24,stone);return g}
+roofHouse(-15,-15,5,4,0xe9c99c);roofHouse(15,-18,5.6,4.4,0xe5bd8f);roofHouse(-17,2,5.4,4.6,0xf0dbb2);roofHouse(17,1,6,5,0xe8c79b);
+function fir(x,z,h=4){const g=new T.Group();g.position.set(x,0,z);scene.add(g);cyl(g,.14,.2,h*.55,0,h*.27,0,wood);for(let j=0;j<4;j++){const cone=new T.Mesh(new T.ConeGeometry((1.3-j*.19)*h/4,1.55*h/4,9),j%2?darkleaf:leaf);cone.position.y=h*.36+j*h*.16;cone.castShadow=true;g.add(cone)}}
+for(let i=0;i<36;i++){const x=((i*19)%61)-30,z=((i*31)%61)-30;if(Math.abs(x)<6&&z>-28&&z<22||Math.abs(x-9)<7&&Math.abs(z-9)<7||Math.abs(x-3)<5&&Math.abs(z-2)<6)continue;fir(x,z,2.8+(i%5)*.45)}
+function orchard(x,z){const g=new T.Group();g.position.set(x,0,z);scene.add(g);cyl(g,.19,.27,1.6,0,.8,0,wood);for(let k=0;k<5;k++)sphere(g,.8,Math.sin(k*2.4)*.65,2.1+Math.cos(k*1.6)*.2,Math.cos(k*2.4)*.6,leaf,12);for(let k=0;k<7;k++)sphere(g,.13,Math.sin(k*3.1)*.73,1.8+(k%3)*.32,Math.cos(k*3.1)*.7,red,9)}
+for(let i=0;i<9;i++)orchard(-23+(i%3)*3.5,12+Math.floor(i/3)*3.6);
+function fencedField(x,z,w,d,kind){const group=new T.Group();group.position.set(x,0,z);scene.add(group);box(group,w,.06,d,0,.02,0,soil);for(let side of [-1,1])for(let k=0;k<=w/1.2;k++){const xx=-w/2+k*1.2;box(group,.09,.75,.09,xx,.4,side*d/2,fenceMat)}for(let side of [-1,1])for(let k=0;k<=d/1.2;k++){const zz=-d/2+k*1.2;box(group,.09,.75,.09,side*w/2,.4,zz,fenceMat)}for(let j=0;j<7;j++)for(let i=0;i<7;i++){let px=-w*.4+i*w*.13,pz=-d*.4+j*d*.13;if(kind===0){cyl(group,.045,.045,.43,px,.24,pz,leaf,6);sphere(group,.16,px,.5,pz,(i+j)%2?red:orange,9)}else{cyl(group,.045,.045,.7,px,.4,pz,leaf,6);sphere(group,.22,px,.78,pz,darkleaf,9)}}}
+fencedField(-12,16,8,8,0);fencedField(17,15,8,8,1);
+// Ahır önü: inekler, tavuklar, saman balyaları
+function cow(x,z){const g=new T.Group();g.position.set(x,0,z);scene.add(g);box(g,1.3,.78,.65,0,.83,0,white);box(g,.46,.52,.48,0,1.02,.52,white);for(let a of [-.42,.42])for(let b of [-.2,.2])box(g,.16,.53,.16,a,.29,b,white);box(g,.45,.18,.07,0,.92,.79,pink);box(g,.35,.25,.06,-.26,1,.34,black);box(g,.24,.22,.06,.38,.9,-.16,black)}
+cow(13,-5);cow(16,-5);
+function chicken(x,z){const g=new T.Group();g.position.set(x,0,z);scene.add(g);sphere(g,.3,0,.43,0,white);sphere(g,.19,0,.68,.17,white);const beak=new T.Mesh(new T.ConeGeometry(.1,.2,6),orange);beak.rotation.x=Math.PI/2;beak.position.set(0,.63,.36);g.add(beak);sphere(g,.06,0,.88,.15,red,8)}
+for(let i=0;i<7;i++)chicken(8+(i%4)*.85,-7+Math.floor(i/4)*1.1);
+for(let i=0;i<12;i++){const x=-9+(i%4)*1.15,z=-4+Math.floor(i/4)*.9;box(scene,.95,.56,.6,x,.31,z,mat(0xcba050))}
+// Sokak lambaları, çiçek kümeleri ve taşlar
+for(const [x,z] of [[-3,-17],[4,-17],[-4,0],[4,0],[-5,16],[5,16]]){cyl(scene,.08,.11,3.5,x,1.75,z,black);sphere(scene,.25,x,3.55,z,flower,12)}
+for(let i=0;i<95;i++){const x=((i*17.7)%58)-29,z=((i*23.3)%59)-29;if(Math.abs(x)<3.5||Math.abs(x-9)<5&&Math.abs(z-9)<5)continue;sphere(scene,.085+(i%3)*.025,x,.12,z,[flower,pink,white][i%3],8)}
+// Traktör kaporta ve ayrıntılar
+box(tractor,1.36,.17,.95,0,1.56,1.03,red);for(let i=0;i<5;i++)box(tractor,1.13,.025,.06,0,1.76,.65+i*.16,black);
+for(const xx of [-.53,.53]){sphere(tractor,.17,xx,1.34,1.58,cream,12);box(tractor,.12,.13,.13,xx,1.35,1.71,steel)}
+box(tractor,1.5,.08,.1,0,.65,1.69,black);box(tractor,1.22,.08,.06,0,2.18,-.24,steel);
+for(const xx of [-.74,.74]){box(tractor,.17,.12,1.2,xx,1.18,-.85,black);box(tractor,.2,.13,.45,xx,1.2,.98,black)}
+// Çiftçi yelek, ayakkabı, eller ve şapka bandı
+box(farmer,.12,.67,.07,-.28,1.36,.27,gold);box(farmer,.12,.67,.07,.28,1.36,.27,gold);for(const xx of [-.21,.21])box(farmer,.3,.18,.47,xx,.09,.07,black);sphere(farmer,.14,-.54,.9,0,skin);sphere(farmer,.14,.54,.9,0,skin);cyl(farmer,.365,.365,.07,0,2.52,0,wood);
+
+
+// V9 GÖRSEL KATMAN — mevcut V8.4 joystick, direksiyon, tekerlek ve hasat koduna dokunulmaz.
+const copper=mat(0xb96836,.73),cream2=mat(0xffe4b4),darkWood=mat(0x68412b),leafBright=mat(0x65ac4b),stone2=mat(0xa5a399),blueV9=mat(0x317ea4),yellow=mat(0xf8d15a),earth=mat(0x715037),hay=mat(0xe4b451);
+function cone(parent,r,h,x,y,z,m,n=10){let o=new T.Mesh(new T.ConeGeometry(r,h,n),m);o.position.set(x,y,z);o.castShadow=true;parent.add(o);return o}
+function sign(text,x,y,z,parent=scene,scale=1){
+ const c=document.createElement('canvas');c.width=512;c.height=128;const g=c.getContext('2d');
+ g.fillStyle='#fff0c8';g.strokeStyle='#764e2d';g.lineWidth=10;
+ g.beginPath();g.roundRect(10,10,492,108,22);g.fill();g.stroke();
+ g.fillStyle='#55361d';g.font='bold 45px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(text,256,68,460);
+ const tx=new T.CanvasTexture(c);tx.colorSpace=T.SRGBColorSpace;
+ const mesh=new T.Mesh(new T.PlaneGeometry(2.6*scale,.65*scale),new T.MeshBasicMaterial({map:tx,transparent:true,side:T.DoubleSide}));
+ mesh.position.set(x,y,z);parent.add(mesh);return mesh;
+}
+function cottage(x,z,color,label){
+ const g=new T.Group();g.position.set(x,0,z);scene.add(g);
+ box(g,4.6,2.65,4.0,0,1.32,0,mat(color));
+ box(g,4.9,.17,4.25,0,2.75,0,copper);
+ const a=cone(g,3.38,1.85,0,3.55,0,mat(0xa94b2e),4);a.rotation.y=Math.PI/4;a.scale.z=.91;
+ box(g,.95,1.72,.12,0,.86,2.08,darkWood);
+ for(const xx of [-1.43,1.43]){
+  box(g,.93,1.06,.11,xx,1.7,2.08,cream2);
+  box(g,.7,.83,.13,xx,1.7,2.16,glass);
+  box(g,.09,.83,.14,xx,1.7,2.25,darkWood);
+  box(g,.73,.09,.14,xx,1.7,2.25,darkWood);
+  box(g,.15,1.16,.13,xx-.55,1.65,2.12,copper);
+  box(g,.15,1.16,.13,xx+.55,1.65,2.12,copper);
+ }
+ box(g,1.25,.12,.66,0,.1,2.38,stone2);
+ sign(label,0,2.63,2.19,g,.72);
+ for(let j=0;j<4;j++){cyl(g,.05,.05,.4,-2.05+j*1.3,.23,2.8,wood,6);sphere(g,.18,-2.05+j*1.3,.55,2.8,j%2?red:leafBright,10)}
+ return g;
+}
+cottage(-6,22,0xe6cf9f,'KOOPERATİF');
+cottage(7,-27,0xe9c89d,'MUHTARLIK');
+cottage(-19,-24,0xf0d4ac,'KÖY EVİ');
+function wheatPatch(x,z){
+ const g=new T.Group();g.position.set(x,0,z);scene.add(g);
+ box(g,6,.07,6,0,.02,0,earth);
+ for(let i=0;i<8;i++)for(let j=0;j<8;j++){
+  let px=-2.6+i*.73,pz=-2.6+j*.73;
+  cyl(g,.022,.025,.76,px,.39,pz,leafBright,5);
+  cone(g,.11,.39,px,.92,pz,hay,7);
+  for(let k=0;k<3;k++)sphere(g,.058,px+(k-1)*.055,.77+k*.12,pz,hay,6);
+ }
+ for(const xx of [-3,3])for(let j=0;j<6;j++)box(g,.085,.65,.085,xx,.35,-3+j*1.2,wood);
+}
+wheatPatch(-12,-10);
+function market(x,z){
+ const g=new T.Group();g.position.set(x,0,z);scene.add(g);
+ box(g,3.5,.18,1.5,0,.85,0,wood);
+ for(let xx of [-1.45,1.45])for(let zz of [-.6,.6])box(g,.12,2.25,.12,xx,1.15,zz,darkWood);
+ for(let i=0;i<7;i++)box(g,.51,.13,2.1,-1.5+i*.5,2.35,0,i%2?cream2:red);
+ for(let i=0;i<9;i++)sphere(g,.16,-1.3+(i%5)*.58,1.05,-.32+Math.floor(i/5)*.57,[red,yellow,leafBright][i%3],10);
+ sign('KÖY PAZARI',0,2.75,.85,g,.67);
+}
+market(-7,-22);
+function detailedTree(x,z,h){
+ const g=new T.Group();g.position.set(x,0,z);scene.add(g);
+ cyl(g,.21,.29,h*.45,0,h*.23,0,wood,9);
+ for(let i=0;i<7;i++)sphere(g,h*.19,Math.cos(i*2.4)*h*.14,h*.62+Math.sin(i*2)*h*.08,Math.sin(i*2.4)*h*.14,i%3?leafBright:green,12);
+ for(let i=0;i<6;i++)sphere(g,.105,Math.sin(i*3)*h*.25,h*.64+(i%3)*.13,Math.cos(i*3)*h*.19,i%2?red:yellow,8);
+}
+for(let i=0;i<13;i++){const x=i%2?-25:25,z=-28+i*4.7;detailedTree(x,z,3.2+(i%3)*.4)}
+// Traktör: ön ızgara, far, egzoz ucu, kabin çerçevesi ve lastik çamurlukları.
+for(let i=0;i<6;i++)box(tractor,.075,.27,.07,-.48+i*.19,1.18,1.65,black);
+for(const xx of [-.56,.56]){
+ sphere(tractor,.15,xx,1.38,1.66,yellow,16);
+ box(tractor,.15,.05,.12,xx,1.64,1.62,steel);
+}
+box(tractor,.10,.72,.11,-.7,1.96,-.71,black);
+box(tractor,.10,.72,.11,.7,1.96,-.71,black);
+box(tractor,1.48,.11,.12,0,2.24,-.2,black);
+cyl(tractor,.13,.10,.14,.6,2.47,.8,steel);
+// Çiftçi: sakal, kulak, saç, düğmeler ve dikişler.
+for(const xx of [-.34,.34])sphere(farmer,.095,xx,2.10,0,skin,10);
+box(farmer,.31,.08,.05,0,1.98,.365,hair);
+for(let k=0;k<3;k++)sphere(farmer,.045,0,1.54-k*.16,.292,gold,10);
+box(farmer,.52,.10,.05,0,1.01,.26,blueV9);
+box(farmer,.54,.12,.05,0,2.43,.30,copper);
+// Yol kenarı taşları ve çiçekli çalılar.
+for(let i=0;i<65;i++){
+ const z=-33+i*1.03;
+ for(const side of [-1,1]){
+  const x=side*(3.63+(i%3)*.09);
+  sphere(scene,.12+(i%3)*.035,x,.09,z,stone2,8);
+  if(i%4===0){sphere(scene,.28,x+side*.48,.31,z,leafBright,9);sphere(scene,.08,x+side*.44,.57,z,i%2?red:yellow,8)}
+ }
+}
+document.title='Çiftlik İmparatorluğu V9';
+document.getElementById('money').textContent='🪙 0 altın · 3D Köy V9';
+
+let driving=false,harvested=false,coins=0,yaw=0,move={x:0,y:0},turn=0,phase=0;
+const stick=document.getElementById('stick'),nub=document.getElementById('nub'),act=document.getElementById('act'),msg=document.getElementById('msg');
+let pointer=null;
+function preventSelection(e){e.preventDefault()}
+for(const ev of ['contextmenu','selectstart','dragstart'])document.addEventListener(ev,preventSelection,{passive:false});
+// touch-action:none ve pointer olayları Safari seçimini engeller; touchstart iptali click olayını bozuyordu.
+function setJoy(e){const r=stick.getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,len=Math.max(1,Math.hypot(dx,dy)),f=Math.min(1,len/48);
+ // Parmağı yukarı = ileri (+Z); sağ = sağ. Kamera açısı ile hareket yönü uyumlu.
+ move.x=dx/len*f;move.y=-dy/len*f;
+ nub.style.transform=`translate(${move.x*45}px,${-move.y*45}px)`;
+}
+stick.addEventListener('pointerdown',e=>{e.preventDefault();pointer=e.pointerId;stick.setPointerCapture(pointer);setJoy(e)});
+stick.addEventListener('pointermove',e=>{if(pointer===e.pointerId){e.preventDefault();setJoy(e)}});
+function end(e){if(e.pointerId===pointer){pointer=null;move.x=move.y=0;nub.style.transform=''}}
+for(const ev of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(ev,end);
+let pressedTurn=new Set();
+function bind(id,val){const b=document.getElementById(id);b.addEventListener('pointerdown',e=>{e.preventDefault();pressedTurn.add(val);b.setPointerCapture(e.pointerId)});
+ for(const ev of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(ev,()=>pressedTurn.delete(val));}
+bind('left',-1);bind('right',1);
+let actionPointer=null;
+function doAction(){
+ if(driving){driving=false;farmer.visible=true;farmer.position.copy(tractor.position).add(new T.Vector3(2,0,0));farmer.rotation.y=yaw;act.textContent='ETKİLEŞ';msg.textContent='Traktörden indin';}
+ else if(farmer.position.distanceTo(tractor.position)<5){driving=true;farmer.visible=false;act.textContent='İN';msg.textContent='🚜 Traktörü sür · Tarlaya git';}
+ else msg.textContent='Traktöre yaklaş ve ETKİLEŞ düğmesine bas';
+}
+act.addEventListener('pointerdown',e=>{e.preventDefault();actionPointer=e.pointerId;act.setPointerCapture(e.pointerId);doAction()});
+act.addEventListener('pointerup',()=>{actionPointer=null});
+// Traktörde direksiyon ve tekerlek yuvarlanması, araç ilerleme mesafesine bağlı.
+let lastPos=new T.Vector3();
+const clock=new T.Clock();
+function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.045),speed=driving?6.5:3.5;
+ turn=(pressedTurn.has(1)?1:0)-(pressedTurn.has(-1)?1:0);
+ yaw+=(driving?-turn:turn)*dt*1.6; // Traktörün kamera yönüne göre sağ/sol dönüşünü düzelt; çiftçi aynı kalır
+ const p=driving?tractor:farmer;
+ const forward=move.y,strafe=-move.x; // iPhone ekranında sağa itince sağa gitmesi için
+ // Kamera karakterin arkasındadır: yukarı ileri, aşağı geri, sağ sağa, sol sola.
+ const vx=(Math.sin(yaw)*forward+Math.cos(yaw)*strafe)*speed*dt;
+ const vz=(Math.cos(yaw)*forward-Math.sin(yaw)*strafe)*speed*dt;
+ lastPos.copy(p.position);
+ p.position.x=Math.max(-32,Math.min(32,p.position.x+vx));p.position.z=Math.max(-32,Math.min(32,p.position.z+vz));
+ p.rotation.y=yaw;
+ const distance=p.position.distanceTo(lastPos);
+ if(!driving){
+   const walking=Math.min(1,Math.hypot(forward,strafe));phase+=dt*10*walking;
+   legL.rotation.x=Math.sin(phase)*.55*walking;legR.rotation.x=-Math.sin(phase)*.55*walking;
+   armL.rotation.x=-Math.sin(phase)*.43*walking;armR.rotation.x=Math.sin(phase)*.43*walking;
+   legL.position.y=.39+Math.max(0,Math.sin(phase))*.07*walking;
+   legR.position.y=.39+Math.max(0,-Math.sin(phase))*.07*walking;
+ }else{
+   for(let i=0;i<wheels.length;i++){
+     wheelSpin[i]+=(forward*speed*dt)/(i<2?.67:.45);
+     wheels[i].userData.spin.rotation.x=wheelSpin[i]
+   }
+   const steerAngle=Math.max(-.42,Math.min(.42,-turn*.32-strafe*.2));
+   for(const w of frontSteer)w.rotation.y=steerAngle;
+ }
+ if(driving&&!harvested&&Math.abs(p.position.x-9)<4.8&&Math.abs(p.position.z-9)<4.8){
+   harvested=true;crops.forEach(c=>c.visible=false);coins+=50;
+   document.getElementById('money').textContent='🪙 '+coins+' altın · 3D Köy V9';
+   msg.textContent='🌾 HASAT BAŞARILI! +50 ALTIN · TOPLAM: '+coins;
+ }
+ const target=new T.Vector3(p.position.x,driving?1.6:1.55,p.position.z);
+ const offset=new T.Vector3(-Math.sin(yaw)*7.7,3.15,-Math.cos(yaw)*7.7);
+ camera.position.lerp(target.clone().add(offset),.12);camera.lookAt(target);
+ renderer.render(scene,camera);
+}
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+document.getElementById('loading').style.display='none';frame();}catch(e){error('3D başlatma hatası: '+e.message)}})();
+</script></body></html>
